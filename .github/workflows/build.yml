@@ -23,6 +23,8 @@ jobs:
       uses: Shogan/rust-musl-action@v1.0.2
       with:
         args: cargo build --target x86_64-apple-darwin --release
+      env:
+        CC: gcc
     - name: build linux x86_64
       uses: Shogan/rust-musl-action@v1.0.2
       with:
