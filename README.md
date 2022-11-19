@@ -14,7 +14,7 @@ To build you'll need to have the Rust tool chain with cargo installed. Compile i
 
 - `./make.sh build`
 
-## Run
+## Run
 
 Once built, you can run the executable directly - e.g. `./target/debug/remember-to-stand`, or run directly from source with:
 
