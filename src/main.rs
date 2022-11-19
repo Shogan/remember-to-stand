@@ -3,6 +3,7 @@ use std::thread;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::collections::HashMap;
+use std::env;
 
 use notify_rust::Notification;
 use tray_item::TrayItem;
@@ -17,7 +18,7 @@ struct MainConfig {
 
 fn main() {
     let mut tray = TrayItem::new("remember-to-stand-tray", "").unwrap();
-    let tray_icon_set = tray.set_icon("icon.png");
+    let tray_icon_set = tray.set_icon("rmts-icon.png");
 
     if tray_icon_set.is_err() {
         println!("Error setting tray icon: {}", tray_icon_set.err().unwrap());
@@ -28,7 +29,7 @@ fn main() {
     let inner = tray.inner_mut();
     inner.add_quit_item("Quit");
 
-    thread::spawn(|| {
+    thread::spawn(|| -> std::io::Result<()> {
         let mut loop_count = 0;
         let mut stand_time_secs = 3600;
         let mut sit_time_secs = 3600;
@@ -105,37 +106,55 @@ fn main() {
             loop_count += 1;
             println!("Loop count: {}", loop_count);
 
-            let file = BufReader::new(File::open("./resources/notify.wav").unwrap());
-            let source = Decoder::new(file).unwrap();
-            let play_result = stream_handle.play_raw(source.convert_samples());
-            if play_result.is_err() {
-                println!("Error playing notify sound: {}", play_result.err().unwrap());
-            }
+            match env::current_exe() {
+                Ok(exe_path) => {
+                    let root_path = std::path::Path::parent(exe_path.as_path());
+                    println!("Root path: {}", root_path.unwrap().display());
+                    let notify_resource_path = root_path.unwrap().join("notify.wav");
+                    let notify_file_open = File::open(notify_resource_path);
 
-            if loop_count % 2 == 0 {
-                let mut notification = Notification::new();
-                notification
-                    .summary(custom_stand_msg.as_str())
-                    .body(&*format!("You've been sitting for {} minutes. It's time to stand up.", sit_time_secs / 60))
-                    .icon("icon.png")
-                    .appname("remember-to-stand")
-                    .timeout(10000)
-                    .show()
-                    .unwrap();
-                sleep(Duration::from_secs(stand_time_secs));
-            } else {
-                let mut notification = Notification::new();
-                notification
-                    .summary(custom_sit_msg.as_str())
-                    .body(&*format!("You've been standing for {} minutes. Time to relax and sit for a while.", stand_time_secs / 60))
-                    .icon("icon.png")
-                    .appname("remember-to-stand")
-                    .timeout(10000)
-                    .show()
-                    .unwrap();
-                
-                sleep(Duration::from_secs(sit_time_secs));
-            }
+                    match notify_file_open {
+                        Ok(file_result) => {
+                            let file = BufReader::new(file_result);
+                            let source = Decoder::new(file).unwrap();
+                            let play_result = stream_handle.play_raw(source.convert_samples());
+                            if play_result.is_err() {
+                                println!("Error playing notify sound: {}", play_result.err().unwrap());
+                            }
+        
+                            if loop_count % 2 == 0 {
+                                let mut notification = Notification::new();
+                                notification
+                                    .summary(custom_stand_msg.as_str())
+                                    .body(&*format!("You've been sitting for {} minutes. It's time to stand up.", sit_time_secs / 60))
+                                    .icon("rmts-icon.png")
+                                    .appname("remember-to-stand")
+                                    .timeout(10000)
+                                    .show()
+                                    .unwrap();
+                                sleep(Duration::from_secs(stand_time_secs));
+                            } else {
+                                let mut notification = Notification::new();
+                                notification
+                                    .summary(custom_sit_msg.as_str())
+                                    .body(&*format!("You've been standing for {} minutes. Time to relax and sit for a while.", stand_time_secs / 60))
+                                    .icon("rmts-icon.png")
+                                    .appname("remember-to-stand")
+                                    .timeout(10000)
+                                    .show()
+                                    .unwrap();
+                                
+                                sleep(Duration::from_secs(sit_time_secs));
+                            }
+                        },
+                        Err(file_err)=>{
+                            println!("Error opening notify.wav from executable's directory: {}", file_err);
+                            std::process::exit(-1);
+                        }
+                    }
+                },
+                Err(e) => println!("failed to get current executable path: {e}"),
+            };
         }
      });
 
