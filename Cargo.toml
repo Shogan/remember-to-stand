@@ -12,3 +12,7 @@ rodio = "0.16.0"
 home = "0.5.3"
 serde = {version = "1.0.130", features = ["derive"]}
 serde_json = {version = "1.0.68"}
+
+[target.'cfg(target_os="linux")'.dependencies]
+libappindicator = "0.7" # Tray icon
+gtk = "0.15"

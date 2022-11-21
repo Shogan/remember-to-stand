@@ -5,6 +5,9 @@ use std::io::{BufReader, BufWriter, Write};
 use std::collections::HashMap;
 use std::env;
 
+#[cfg(target_os = "linux")]
+use gtk;
+
 use notify_rust::Notification;
 use tray_item::TrayItem;
 use rodio::{Decoder, OutputStream, source::Source};
@@ -17,17 +20,8 @@ struct MainConfig {
 }
 
 fn main() {
-    let mut tray = TrayItem::new("remember-to-stand-tray", "").unwrap();
-    let tray_icon_set = tray.set_icon("rmts-icon.png");
-
-    if tray_icon_set.is_err() {
-        println!("Error setting tray icon: {}", tray_icon_set.err().unwrap());
-    }
-
-    tray.add_label("Remember to stand").unwrap();
-
-    let inner = tray.inner_mut();
-    inner.add_quit_item("Quit");
+    #[cfg(target_os = "linux")]
+    gtk::init().unwrap();
 
     thread::spawn(|| -> std::io::Result<()> {
         let mut loop_count = 0;
@@ -104,8 +98,6 @@ fn main() {
         
         loop {
             loop_count += 1;
-            println!("Loop count: {}", loop_count);
-
             match env::current_exe() {
                 Ok(exe_path) => {
                     let root_path = std::path::Path::parent(exe_path.as_path());
@@ -156,7 +148,29 @@ fn main() {
                 Err(e) => println!("failed to get current executable path: {e}"),
             };
         }
-     });
+    });
 
+    let mut tray = TrayItem::new("remember-to-stand-tray", "").unwrap();
+    let tray_icon_set = tray.set_icon("rmts-icon.png");
+
+    if tray_icon_set.is_err() {
+        println!("Error setting tray icon: {}", tray_icon_set.err().unwrap());
+    }
+
+    tray.add_label("Remember to stand").unwrap();
+    let inner = tray.inner_mut();
+
+    #[cfg(target_os = "macos")]
+    inner.add_quit_item("Quit");
+
+    #[cfg(target_os = "linux")]
+    tray.add_menu_item("Quit", || {
+    gtk::main_quit();
+    }).unwrap();
+
+    #[cfg(target_os = "macos")]
     inner.display();
+
+    #[cfg(target_os = "linux")]
+    gtk::main();
 }

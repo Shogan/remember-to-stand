@@ -8,9 +8,17 @@ Remember to stand has a customisable time delay between the two different notifi
 
 When run, it will add a small icon in the system tray area (tested on macOS and uBuntu Linux 22.04).
 
+On linux platforms the app leverages (GTK)[https://www.gtk.org/] for the UI elements.
+
 ## Build
 
-To build you'll need to have the Rust tool chain with cargo installed. Compile into a single executable file with:
+To build you'll need to have the Rust tool chain with cargo installed.
+
+**Note:** to build on uBuntu Linux systems you'll need a few dev dependencies to be installed. Make sure the following are installed:
+
+- `apt install build-essential pkg-config libgtk-3-dev librust-alsa-sys-dev`
+
+Compile into a single executable file with:
 
 - `./make.sh build`
 
