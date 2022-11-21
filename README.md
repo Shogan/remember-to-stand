@@ -22,7 +22,7 @@ Compile into a single executable file with:
 
 - `./make.sh build`
 
-## Run
+## Run
 
 Once built, you can run the executable directly - e.g. `./target/debug/remember-to-stand`, or run directly from source with:
 
